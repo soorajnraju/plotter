@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plotter
+
+A full-stack incident tracking web app. Plot, search, and manage incidents on an interactive map — built with Next.js, Leaflet/OpenStreetMap, Supabase, and Tailwind CSS.
+
+## Features
+
+- **Interactive map** — click anywhere to report an incident; markers are colored by severity
+- **Incident management** — create, update status, and delete incidents you own
+- **Search & filter** — filter by keyword, category, severity, and status
+- **Incidents list** — card grid view with "View on map" deep-link that auto-pans and opens the popup
+- **Authentication** — email/password sign-in and Google OAuth via Supabase
+- **Free tier** — OpenStreetMap tiles (no API key), Supabase free tier, Vercel hobby deployment
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, TypeScript) |
+| Map | Leaflet.js + OpenStreetMap |
+| Auth & DB | Supabase (PostgreSQL + Row Level Security) |
+| Styling | Tailwind CSS v4 |
+| Deployment | Vercel |
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone <your-repo-url>
+cd plotter
+npm install
+```
+
+### 2. Set up Supabase
+
+1. Create a free project at [supabase.com](https://supabase.com)
+2. Run the schema in the Supabase SQL Editor:
+
+```sql
+-- contents of supabase/schema.sql
+```
+
+Or copy-paste the file `supabase/schema.sql` directly into the SQL Editor.
+
+3. (Optional) Enable Google OAuth: **Supabase Dashboard → Authentication → Providers → Google**, then add your Google OAuth credentials.
+
+### 3. Configure environment variables
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Both values are found in **Supabase Dashboard → Project Settings → API**.
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (auth)/login/          # Login page (email + Google OAuth)
+│   ├── (dashboard)/
+│   │   ├── map/               # Map page (reads ?lat=&lng= for deep-link)
+│   │   └── incidents/         # Incidents list page
+│   ├── api/incidents/         # REST API (GET, POST, PATCH, DELETE)
+│   └── auth/callback/         # OAuth callback handler
+├── components/
+│   ├── layout/Navbar.tsx
+│   ├── map/
+│   │   ├── MapView.tsx        # Client state wrapper
+│   │   ├── LeafletMap.tsx     # Leaflet instance (SSR-disabled)
+│   │   └── AddIncidentModal.tsx
+│   └── incidents/
+│       ├── IncidentListView.tsx
+│       ├── IncidentCard.tsx
+│       └── SearchFilter.tsx
+├── lib/
+│   ├── supabase/              # Supabase client & server helpers
+│   └── utils.ts               # Color maps, category icons, cn()
+├── types/incident.ts
+└── proxy.ts                   # Auth middleware (Next.js 16)
+supabase/schema.sql            # Database schema + RLS policies
+```
 
-## Learn More
+## Deployment (Vercel)
 
-To learn more about Next.js, take a look at the following resources:
+1. Push your code to GitHub / GitLab
+2. Import the repo in [Vercel](https://vercel.com/new)
+3. Add environment variables in **Vercel → Project → Settings → Environment Variables**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy — Vercel auto-detects Next.js and handles everything else
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Incident Categories
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`Infrastructure` · `Crime` · `Fire` · `Medical` · `Weather` · `Traffic` · `Other`
 
-## Deploy on Vercel
+## Severity Levels
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Severity | Marker Color |
+|---|---|
+| Low | Green |
+| Medium | Yellow |
+| High | Orange |
+| Critical | Red |
