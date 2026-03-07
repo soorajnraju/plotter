@@ -1,0 +1,10 @@
+// Auth pages don't need static pre-rendering
+export const dynamic = 'force-dynamic'
+
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800">
+      {children}
+    </div>
+  )
+}
