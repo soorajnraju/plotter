@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Incident } from '@/types/incident'
@@ -71,6 +71,7 @@ export interface LeafletMapProps {
   onIncidentUpdate: (incident: Incident) => void
   onIncidentDelete: (id: string) => void
   userId: string | null
+  focusLocation?: { lat: number; lng: number } | null
 }
 
 export default function LeafletMap({
@@ -79,42 +80,65 @@ export default function LeafletMap({
   onIncidentUpdate,
   onIncidentDelete,
   userId,
+  focusLocation,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef       = useRef<L.Map | null>(null)
+  // useState (not useRef) so changing the map instance triggers a re-render,
+  // which guarantees the marker effect re-runs after the map is ready.
+  const [map, setMap] = useState<L.Map | null>(null)
   const markersRef   = useRef<Map<string, L.Marker>>(new Map())
+  const fittedRef    = useRef(false)
 
-  // Initialise map once
+  // Stable callback refs — prevent marker effect from re-running on every render
+  const onMapClickRef       = useRef(onMapClick)
+  const onIncidentUpdateRef = useRef(onIncidentUpdate)
+  const onIncidentDeleteRef = useRef(onIncidentDelete)
+  useEffect(() => { onMapClickRef.current       = onMapClick       })
+  useEffect(() => { onIncidentUpdateRef.current = onIncidentUpdate })
+  useEffect(() => { onIncidentDeleteRef.current = onIncidentDelete })
+
+  // ── Initialise map once ───────────────────────────────────────
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    if (!containerRef.current) return
 
-    const map = L.map(containerRef.current, { center: [20, 0], zoom: 2 })
+    const leafletMap = L.map(containerRef.current, { center: [20, 0], zoom: 2 })
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
-    }).addTo(map)
+    }).addTo(leafletMap)
 
-    map.on('click', (e) => onMapClick(e.latlng.lat, e.latlng.lng))
-    mapRef.current = map
+    leafletMap.on('click', (e) => onMapClickRef.current(e.latlng.lat, e.latlng.lng))
+
+    // Setting state triggers a React re-render → the marker effect below
+    // will fire with a non-null map, guaranteed after this init completes.
+    setMap(leafletMap)
 
     return () => {
-      map.remove()
-      mapRef.current = null
+      leafletMap.remove()
+      setMap(null)
+      fittedRef.current = false
+      markersRef.current.clear()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Sync markers whenever incidents or userId changes
+  // ── Sync markers + position map ──────────────────────────────────
+  // Depends on `map` (state) so it only runs once the map is truly ready.
   useEffect(() => {
-    const map = mapRef.current
     if (!map) return
+
+    // Recalculate container dimensions in case CSS was applied after init
+    // (critical for absolute/flex containers with dynamic imports)
+    map.invalidateSize()
 
     const ids = new Set(incidents.map((i) => i.id))
 
     // Remove stale markers
     markersRef.current.forEach((marker, id) => {
-      if (!ids.has(id)) { marker.remove(); markersRef.current.delete(id) }
+      if (!ids.has(id)) {
+        marker.remove()
+        markersRef.current.delete(id)
+      }
     })
 
     // Add / refresh markers
@@ -123,51 +147,80 @@ export default function LeafletMap({
       if (existing) {
         existing.setIcon(createIcon(incident.severity))
         existing.setPopupContent(buildPopup(incident, userId))
-      } else {
-        const marker = L.marker([incident.latitude, incident.longitude], {
-          icon: createIcon(incident.severity),
-        })
+        return
+      }
 
-        marker.bindPopup(buildPopup(incident, userId), { maxWidth: 280 })
+      const marker = L.marker([incident.latitude, incident.longitude], {
+        icon: createIcon(incident.severity),
+      })
 
-        marker.on('popupopen', () => {
-          const updateBtn = document.getElementById(`pu-${incident.id}`)
-          const deleteBtn = document.getElementById(`pd-${incident.id}`)
-          const select    = document.getElementById(`ps-${incident.id}`) as HTMLSelectElement | null
+      marker.bindPopup(buildPopup(incident, userId), { maxWidth: 280 })
 
-          if (updateBtn && select) {
-            updateBtn.onclick = async () => {
-              const res = await fetch(`/api/incidents/${incident.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: select.value }),
-              })
-              if (res.ok) {
-                const updated: Incident = await res.json()
-                onIncidentUpdate(updated)
-                marker.closePopup()
-              }
+      marker.on('popupopen', () => {
+        const updateBtn = document.getElementById(`pu-${incident.id}`)
+        const deleteBtn = document.getElementById(`pd-${incident.id}`)
+        const select    = document.getElementById(`ps-${incident.id}`) as HTMLSelectElement | null
+
+        if (updateBtn && select) {
+          updateBtn.onclick = async () => {
+            const res = await fetch(`/api/incidents/${incident.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: select.value }),
+            })
+            if (res.ok) {
+              const updated: Incident = await res.json()
+              onIncidentUpdateRef.current(updated)
+              marker.closePopup()
             }
           }
+        }
 
-          if (deleteBtn) {
-            deleteBtn.onclick = async () => {
-              if (!confirm('Delete this incident?')) return
-              const res = await fetch(`/api/incidents/${incident.id}`, { method: 'DELETE' })
-              if (res.ok) {
-                onIncidentDelete(incident.id)
-                marker.remove()
-                markersRef.current.delete(incident.id)
-              }
+        if (deleteBtn) {
+          deleteBtn.onclick = async () => {
+            if (!confirm('Delete this incident?')) return
+            const res = await fetch(`/api/incidents/${incident.id}`, { method: 'DELETE' })
+            if (res.ok) {
+              onIncidentDeleteRef.current(incident.id)
+              marker.remove()
+              markersRef.current.delete(incident.id)
             }
           }
-        })
+        }
+      })
 
-        marker.addTo(map)
-        markersRef.current.set(incident.id, marker)
+      marker.addTo(map)
+      markersRef.current.set(incident.id, marker)
+    })
+
+    // Position the map — deferred one frame so the browser has painted the
+    // new markers before we move the viewport.
+    const raf = requestAnimationFrame(() => {
+      if (focusLocation) {
+        map.setView([focusLocation.lat, focusLocation.lng], 15)
+        // Open the popup for the matching marker
+        markersRef.current.forEach((marker) => {
+          const pos = marker.getLatLng()
+          if (
+            Math.abs(pos.lat - focusLocation.lat) < 0.001 &&
+            Math.abs(pos.lng - focusLocation.lng) < 0.001
+          ) {
+            marker.openPopup()
+          }
+        })
+      } else if (!fittedRef.current && incidents.length > 0) {
+        fittedRef.current = true
+        map.fitBounds(
+          L.latLngBounds(incidents.map((i) => [i.latitude, i.longitude])),
+          { padding: [48, 48], maxZoom: 14 },
+        )
       }
     })
-  }, [incidents, onIncidentUpdate, onIncidentDelete, userId])
 
-  return <div ref={containerRef} className="h-full w-full" />
+    return () => cancelAnimationFrame(raf)
+  }, [map, incidents, userId, focusLocation])
+
+  // The container uses absolute inset-0 so it fills the relatively-positioned
+  // parent regardless of whether the parent's height comes from flex or CSS.
+  return <div ref={containerRef} className="absolute inset-0" />
 }

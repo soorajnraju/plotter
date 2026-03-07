@@ -24,9 +24,10 @@ interface MapViewProps {
   initialIncidents: Incident[]
   userId: string | null
   userEmail: string | null
+  focusLocation?: { lat: number; lng: number } | null
 }
 
-export default function MapView({ initialIncidents, userId, userEmail }: MapViewProps) {
+export default function MapView({ initialIncidents, userId, userEmail, focusLocation }: MapViewProps) {
   const [incidents, setIncidents] = useState(initialIncidents)
   const [filters, setFilters] = useState<IncidentFilters>({})
   const [clickedLocation, setClickedLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -71,8 +72,8 @@ export default function MapView({ initialIncidents, userId, userEmail }: MapView
         <SearchFilter filters={filters} onChange={setFilters} compact />
       </div>
 
-      {/* Map */}
-      <div className="relative flex-1">
+      {/* Map — min-h-0 prevents the flex item from overflowing */}
+      <div className="relative flex-1 min-h-0">
         {!userId && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm text-amber-800 shadow-sm pointer-events-none whitespace-nowrap">
             Viewing as guest — sign in to report incidents
@@ -91,6 +92,7 @@ export default function MapView({ initialIncidents, userId, userEmail }: MapView
           onIncidentUpdate={handleIncidentUpdated}
           onIncidentDelete={handleIncidentDeleted}
           userId={userId}
+          focusLocation={focusLocation}
         />
       </div>
 
