@@ -110,6 +110,15 @@ src/
 supabase/schema.sql            # Database schema + RLS policies
 ```
 
+## API Reference
+
+All REST endpoints are documented in [API.md](API.md). This includes full request/response shapes for:
+
+- **Auth** — `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/refresh`, `GET /api/auth/me`
+- **Incidents** — `GET`, `POST`, `GET /:id`, `PATCH /:id`, `DELETE /:id`
+
+All endpoints support **Bearer token auth** (`Authorization: Bearer <access_token>`) for mobile clients, in addition to the cookie-based session used by the web app.
+
 ## Deployment (Vercel)
 
 1. Push your code to GitHub / GitLab

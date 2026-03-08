@@ -1,3 +1,4 @@
+import { getSupabaseAndUser } from '@/lib/supabase/api-auth'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -19,9 +20,8 @@ export async function GET(_req: Request, { params }: { params: Params }) {
 
 export async function PATCH(request: Request, { params }: { params: Params }) {
   const { id } = await params
-  const supabase = await createClient()
+  const { supabase, user } = await getSupabaseAndUser(request)
 
-  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify ownership
@@ -72,11 +72,10 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   return NextResponse.json(data)
 }
 
-export async function DELETE(_req: Request, { params }: { params: Params }) {
+export async function DELETE(request: Request, { params }: { params: Params }) {
   const { id } = await params
-  const supabase = await createClient()
+  const { supabase, user } = await getSupabaseAndUser(request)
 
-  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify ownership

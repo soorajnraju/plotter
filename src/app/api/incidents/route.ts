@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAndUser } from '@/lib/supabase/api-auth'
 import { NextResponse } from 'next/server'
 
 const VALID_CATEGORIES = ['accident', 'fire', 'medical', 'crime', 'weather', 'other'] as const
@@ -27,8 +28,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getSupabaseAndUser(request)
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

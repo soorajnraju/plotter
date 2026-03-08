@@ -33,7 +33,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/privacy') ||
-    pathname.startsWith('/terms')
+    pathname.startsWith('/terms') ||
+    pathname.startsWith('/api/') // API routes handle their own auth (Bearer token or 401)
 
   // Unauthenticated user trying to access a protected route
   if (!user && !isPublicPath) {
