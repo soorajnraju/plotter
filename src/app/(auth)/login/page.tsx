@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { MapPin, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
@@ -192,6 +193,12 @@ export default function LoginPage() {
         Powered by{' '}
         <span className="font-medium text-gray-500 dark:text-gray-400">OpenStreetMap</span> &amp;{' '}
         <span className="font-medium text-gray-500 dark:text-gray-400">Supabase</span>
+      </p>
+
+      <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500 space-x-3">
+        <Link href="/privacy" className="hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2">Privacy Policy</Link>
+        <span>·</span>
+        <Link href="/terms" className="hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2">Terms of Service</Link>
       </p>
     </div>
   )
