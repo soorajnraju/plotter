@@ -46,7 +46,7 @@ export default function Navbar() {
           )}
         >
           <Icon className="w-4 h-4" />
-          {label}
+          <span className="hidden sm:inline">{label}</span>
         </Link>
       ))}
 
@@ -56,9 +56,10 @@ export default function Navbar() {
         <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+          aria-label="Logout"
         >
           <LogOut className="w-4 h-4" />
-          Logout
+          <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
     </nav>
