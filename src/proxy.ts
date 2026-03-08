@@ -29,7 +29,11 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
-  const isPublicPath = pathname.startsWith('/login') || pathname.startsWith('/auth')
+  const isPublicPath =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/terms')
 
   // Unauthenticated user trying to access a protected route
   if (!user && !isPublicPath) {
