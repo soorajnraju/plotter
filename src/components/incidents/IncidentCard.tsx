@@ -19,17 +19,17 @@ export default function IncidentCard({ incident, isOwner, onDelete, onStatusUpda
   const icon   = CATEGORY_ICONS[incident.category] ?? '📍'
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-2">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-2">
       {/* Title row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 min-w-0">
           <span className="text-xl leading-none shrink-0 mt-0.5">{icon}</span>
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2">{incident.title}</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-snug line-clamp-2">{incident.title}</h3>
         </div>
         {isOwner && (
           <button
             onClick={() => onDelete(incident.id)}
-            className="shrink-0 p-1 text-gray-300 hover:text-red-500 transition-colors rounded"
+            className="shrink-0 p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
             title="Delete incident"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -45,18 +45,18 @@ export default function IncidentCard({ incident, isOwner, onDelete, onStatusUpda
         <span className={cn('text-xs px-2 py-0.5 rounded-full capitalize', stat.bg, stat.text)}>
           {incident.status}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 capitalize">
           {incident.category}
         </span>
       </div>
 
       {/* Description */}
       {incident.description && (
-        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{incident.description}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{incident.description}</p>
       )}
 
       {/* Meta */}
-      <div className="space-y-0.5 text-xs text-gray-400">
+      <div className="space-y-0.5 text-xs text-gray-400 dark:text-gray-500">
         {incident.address && (
           <div className="flex items-center gap-1 truncate">
             <MapPin className="w-3 h-3 shrink-0" />
@@ -74,7 +74,7 @@ export default function IncidentCard({ incident, isOwner, onDelete, onStatusUpda
         <select
           value={incident.status}
           onChange={(e) => onStatusUpdate(incident.id, e.target.value)}
-          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="active">Active</option>
           <option value="investigating">Investigating</option>
@@ -85,7 +85,7 @@ export default function IncidentCard({ incident, isOwner, onDelete, onStatusUpda
       {/* View on map */}
       <Link
         href={`/map?lat=${incident.latitude}&lng=${incident.longitude}`}
-        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+        className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
       >
         View on map →
       </Link>

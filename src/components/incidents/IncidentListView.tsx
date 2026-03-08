@@ -56,10 +56,10 @@ export default function IncidentListView({
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header + filters */}
-      <div className="px-4 py-3 bg-white border-b border-gray-100 shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 shrink-0">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-base font-semibold text-gray-900">Incidents</h1>
-          <span className="text-xs text-gray-400">
+          <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Incidents</h1>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
             {filtered.length} / {totalCount} total
           </span>
         </div>
@@ -70,9 +70,9 @@ export default function IncidentListView({
       <div className="flex-1 overflow-y-auto p-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-            <AlertTriangle className="w-12 h-12 text-gray-200" />
-            <p className="text-gray-500 font-medium">No incidents match your filters</p>
-            <p className="text-gray-400 text-sm">
+            <AlertTriangle className="w-12 h-12 text-gray-200 dark:text-gray-700" />
+            <p className="text-gray-500 dark:text-gray-400 font-medium">No incidents match your filters</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">
               Try clearing the filters or head to the Map to report a new one.
             </p>
           </div>

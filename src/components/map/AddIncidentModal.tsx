@@ -15,10 +15,10 @@ const CATEGORIES: { value: IncidentCategory; label: string }[] = [
 ]
 
 const SEVERITIES: { value: IncidentSeverity; label: string; cls: string }[] = [
-  { value: 'low',      label: 'Low',      cls: 'bg-green-100 text-green-800 border-green-300'  },
-  { value: 'medium',   label: 'Medium',   cls: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  { value: 'high',     label: 'High',     cls: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { value: 'critical', label: 'Critical', cls: 'bg-red-100 text-red-800 border-red-300'        },
+  { value: 'low',      label: 'Low',      cls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'  },
+  { value: 'medium',   label: 'Medium',   cls: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800' },
+  { value: 'high',     label: 'High',     cls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800' },
+  { value: 'critical', label: 'Critical', cls: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'        },
 ]
 
 interface AddIncidentModalProps {
@@ -79,16 +79,16 @@ export default function AddIncidentModal({
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-indigo-600" />
-            <h2 className="font-semibold text-gray-900">Report an Incident</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Report an Incident</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -96,7 +96,7 @@ export default function AddIncidentModal({
         </div>
 
         {/* Coordinates strip */}
-        <div className="px-5 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-400 font-mono">
+        <div className="px-5 py-2 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 font-mono">
           {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
         </div>
 
@@ -111,7 +111,7 @@ export default function AddIncidentModal({
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -121,30 +121,30 @@ export default function AddIncidentModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Brief description of the incident"
               maxLength={200}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               maxLength={1000}
               placeholder="Additional details, context, or updates…"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as IncidentCategory)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               {CATEGORIES.map(({ value, label }) => (
                 <option key={value} value={value}>{label}</option>
@@ -154,7 +154,7 @@ export default function AddIncidentModal({
 
           {/* Severity */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Severity</label>
             <div className="grid grid-cols-4 gap-2">
               {SEVERITIES.map(({ value, label, cls }) => (
                 <button
@@ -163,7 +163,7 @@ export default function AddIncidentModal({
                   onClick={() => setSeverity(value)}
                   className={cn(
                     'py-1.5 text-xs font-semibold rounded-lg border transition-all',
-                    severity === value ? cls : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50',
+                    severity === value ? cls : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600',
                   )}
                 >
                   {label}
@@ -174,8 +174,8 @@ export default function AddIncidentModal({
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Address <span className="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -183,7 +183,7 @@ export default function AddIncidentModal({
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Street name or landmark"
               maxLength={500}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
@@ -192,7 +192,7 @@ export default function AddIncidentModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>

@@ -23,7 +23,7 @@ export default function SearchFilter({ filters, onChange, compact = false }: Sea
           value={filters.search ?? ''}
           onChange={(e) => onChange({ ...filters, search: e.target.value })}
           placeholder="Search incidents…"
-          className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+          className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
         />
       </div>
 
@@ -31,7 +31,7 @@ export default function SearchFilter({ filters, onChange, compact = false }: Sea
       <select
         value={filters.category ?? ''}
         onChange={(e) => onChange({ ...filters, category: e.target.value as IncidentCategory | '' })}
-        className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-gray-700"
+        className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
       >
         <option value="">All Categories</option>
         <option value="accident">🚗 Accident</option>
@@ -46,7 +46,7 @@ export default function SearchFilter({ filters, onChange, compact = false }: Sea
       <select
         value={filters.severity ?? ''}
         onChange={(e) => onChange({ ...filters, severity: e.target.value as IncidentSeverity | '' })}
-        className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-gray-700"
+        className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
       >
         <option value="">All Severities</option>
         <option value="low">🟢 Low</option>
@@ -59,7 +59,7 @@ export default function SearchFilter({ filters, onChange, compact = false }: Sea
       <select
         value={filters.status ?? ''}
         onChange={(e) => onChange({ ...filters, status: e.target.value as IncidentStatus | '' })}
-        className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-gray-700"
+        className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
       >
         <option value="">All Statuses</option>
         <option value="active">Active</option>
