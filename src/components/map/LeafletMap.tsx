@@ -16,6 +16,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
+// Inline SVG icons used inside the Leaflet locate control
+const CROSSHAIR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`
+const SPINNER_SVG  = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:ulp-spin 0.8s linear infinite;display:block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`
+
 function createIcon(severity: string): L.DivIcon {
   const color = SEVERITY_COLORS[severity as keyof typeof SEVERITY_COLORS]?.map ?? '#6366f1'
   return L.divIcon({
@@ -72,7 +76,6 @@ export interface LeafletMapProps {
   onIncidentDelete: (id: string) => void
   userId: string | null
   focusLocation?: { lat: number; lng: number } | null
-  userLocation?: { lat: number; lng: number } | null
 }
 
 export default function LeafletMap({
@@ -82,7 +85,6 @@ export default function LeafletMap({
   onIncidentDelete,
   userId,
   focusLocation,
-  userLocation,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   // useState (not useRef) so changing the map instance triggers a re-render,
@@ -90,7 +92,6 @@ export default function LeafletMap({
   const [map, setMap] = useState<L.Map | null>(null)
   const markersRef   = useRef<Map<string, L.Marker>>(new Map())
   const fittedRef    = useRef(false)
-  const userMarkerRef = useRef<L.Marker | null>(null)
 
   // Stable callback refs — prevent marker effect from re-running on every render
   const onMapClickRef       = useRef(onMapClick)
@@ -104,7 +105,7 @@ export default function LeafletMap({
   useEffect(() => {
     if (!containerRef.current) return
 
-    // Inject pulse-animation CSS once
+    // Inject animation CSS once (pulse rings + spinner)
     if (!document.getElementById('ulp-style')) {
       const el = document.createElement('style')
       el.id = 'ulp-style'
@@ -112,6 +113,10 @@ export default function LeafletMap({
         @keyframes ulp-ring {
           0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.9; }
           100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0;   }
+        }
+        @keyframes ulp-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
       `
       document.head.appendChild(el)
@@ -126,6 +131,102 @@ export default function LeafletMap({
 
     leafletMap.on('click', (e) => onMapClickRef.current(e.latlng.lat, e.latlng.lng))
 
+    // ── "Locate Me" Leaflet control ─────────────────────────────
+    // Built as a native Leaflet control so it renders inside the map's own
+    // z-index stack and is always visible regardless of the page's CSS context.
+    let userMarker: L.Marker | null = null
+
+    function buildPulseIcon(): L.DivIcon {
+      return L.divIcon({
+        html: `
+          <div style="position:relative;width:20px;height:20px">
+            <div style="position:absolute;top:50%;left:50%;width:40px;height:40px;border-radius:50%;background:rgba(79,70,229,0.35);animation:ulp-ring 2s ease-out infinite;"></div>
+            <div style="position:absolute;top:50%;left:50%;width:40px;height:40px;border-radius:50%;background:rgba(79,70,229,0.2);animation:ulp-ring 2s ease-out 1s infinite;"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#4f46e5;border:3px solid white;box-shadow:0 0 8px rgba(79,70,229,0.7);z-index:2;"></div>
+          </div>`,
+        className: '',
+        iconSize:   [20, 20],
+        iconAnchor: [10, 10],
+      })
+    }
+
+    // L.Control.extend is inherited from L.Class but TypeScript's static-side
+    // inheritance doesn't model it directly, so the any cast is required here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const LocateControl = (L.Control as any).extend({
+      options: { position: 'topright' },
+
+      onAdd(): HTMLElement {
+        // Wrap in a leaflet-bar container so Leaflet's default control styles apply
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+        const btn = L.DomUtil.create('a', '', container) as HTMLAnchorElement
+        btn.href = '#'
+        btn.title = 'Go to my location'
+        btn.setAttribute('role', 'button')
+        btn.setAttribute('aria-label', 'Go to my location')
+        // Match Leaflet's zoom-button dimensions and add indigo icon colour
+        btn.style.cssText =
+          'display:flex;align-items:center;justify-content:center;color:#4f46e5;'
+        btn.innerHTML = CROSSHAIR_SVG
+
+        // Prevent map clicks from firing when the button is clicked
+        L.DomEvent.disableClickPropagation(container)
+
+        L.DomEvent.on(btn, 'click', (e) => {
+          L.DomEvent.preventDefault(e)
+
+          if (!navigator.geolocation) {
+            btn.style.color = '#dc2626'
+            setTimeout(() => { btn.style.color = '#4f46e5' }, 2000)
+            return
+          }
+
+          // Show loading state
+          btn.innerHTML = SPINNER_SVG
+          btn.style.pointerEvents = 'none'
+
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              // Restore button
+              btn.innerHTML = CROSSHAIR_SVG
+              btn.style.pointerEvents = ''
+
+              const lat = pos.coords.latitude
+              const lng = pos.coords.longitude
+
+              // Create or move the pulsing "you are here" marker
+              if (userMarker) {
+                userMarker.setLatLng([lat, lng])
+                userMarker.setIcon(buildPulseIcon())
+              } else {
+                userMarker = L.marker([lat, lng], {
+                  icon: buildPulseIcon(),
+                  zIndexOffset: 1000,
+                }).addTo(leafletMap)
+              }
+
+              // Fly to the user's position at max zoom
+              leafletMap.flyTo([lat, lng], 17, { animate: true, duration: 1.5 })
+            },
+            () => {
+              // Geolocation denied / timed out — flash button red briefly
+              btn.innerHTML = CROSSHAIR_SVG
+              btn.style.pointerEvents = ''
+              btn.style.color = '#dc2626'
+              setTimeout(() => { btn.style.color = '#4f46e5' }, 3000)
+            },
+            { enableHighAccuracy: true, timeout: 10_000 },
+          )
+        })
+
+        return container
+      },
+
+      onRemove(): void {},
+    })
+
+    new LocateControl().addTo(leafletMap)
+
     // Setting state triggers a React re-render → the marker effect below
     // will fire with a non-null map, guaranteed after this init completes.
     setMap(leafletMap)
@@ -135,7 +236,6 @@ export default function LeafletMap({
       setMap(null)
       fittedRef.current = false
       markersRef.current.clear()
-      userMarkerRef.current = null
     }
   }, [])
 
@@ -236,63 +336,6 @@ export default function LeafletMap({
 
     return () => cancelAnimationFrame(raf)
   }, [map, incidents, userId, focusLocation])
-
-  // ── User location: pulsing marker + fly-to ───────────────────
-  useEffect(() => {
-    if (!map) return
-
-    if (!userLocation) {
-      // Remove the marker if location was cleared
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove()
-        userMarkerRef.current = null
-      }
-      return
-    }
-
-    const pulseIcon = L.divIcon({
-      html: `
-        <div style="position:relative;width:20px;height:20px">
-          <div style="
-            position:absolute;top:50%;left:50%;
-            width:40px;height:40px;border-radius:50%;
-            background:rgba(79,70,229,0.35);
-            animation:ulp-ring 2s ease-out infinite;
-          "></div>
-          <div style="
-            position:absolute;top:50%;left:50%;
-            width:40px;height:40px;border-radius:50%;
-            background:rgba(79,70,229,0.2);
-            animation:ulp-ring 2s ease-out 1s infinite;
-          "></div>
-          <div style="
-            position:absolute;top:50%;left:50%;
-            transform:translate(-50%,-50%);
-            width:16px;height:16px;border-radius:50%;
-            background:#4f46e5;border:3px solid white;
-            box-shadow:0 0 8px rgba(79,70,229,0.7);
-            z-index:2;
-          "></div>
-        </div>`,
-      className: '',
-      iconSize:   [20, 20],
-      iconAnchor: [10, 10],
-    })
-
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
-      userMarkerRef.current.setIcon(pulseIcon)
-    } else {
-      userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
-        icon: pulseIcon,
-        zIndexOffset: 1000,
-      }).addTo(map)
-    }
-
-    // Fly to the user location every time the button is clicked (even if same coords),
-    // so the user can always re-center the map by clicking "Locate Me".
-    map.flyTo([userLocation.lat, userLocation.lng], 17, { animate: true, duration: 1.5 })
-  }, [map, userLocation])
 
   // The container uses absolute inset-0 so it fills the relatively-positioned
   // parent regardless of whether the parent's height comes from flex or CSS.

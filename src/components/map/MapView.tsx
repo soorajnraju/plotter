@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { Crosshair, Loader2 } from 'lucide-react'
 import type { Incident, IncidentFilters } from '@/types/incident'
 import type { LeafletMapProps } from './LeafletMap'
 import SearchFilter from '@/components/incidents/SearchFilter'
@@ -28,15 +27,10 @@ interface MapViewProps {
   focusLocation?: { lat: number; lng: number } | null
 }
 
-const GEOLOCATION_TIMEOUT_MS = 10_000
-
 export default function MapView({ initialIncidents, userId, userEmail, focusLocation }: MapViewProps) {
   const [incidents, setIncidents] = useState(initialIncidents)
   const [filters, setFilters] = useState<IncidentFilters>({})
   const [clickedLocation, setClickedLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [locating, setLocating] = useState(false)
-  const [locateError, setLocateError] = useState<string | null>(null)
 
   const filteredIncidents = incidents.filter((inc) => {
     if (
@@ -71,26 +65,6 @@ export default function MapView({ initialIncidents, userId, userEmail, focusLoca
     setIncidents((prev) => prev.filter((i) => i.id !== id))
   }, [])
 
-  const handleLocateMe = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocateError('Geolocation is not supported by your browser')
-      return
-    }
-    setLocating(true)
-    setLocateError(null)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setLocating(false)
-      },
-      () => {
-        setLocateError('Unable to retrieve your location')
-        setLocating(false)
-      },
-      { enableHighAccuracy: true, timeout: GEOLOCATION_TIMEOUT_MS },
-    )
-  }, [])
-
   return (
     <div className="h-full flex flex-col">
       {/* Filter bar */}
@@ -112,25 +86,6 @@ export default function MapView({ initialIncidents, userId, userEmail, focusLoca
           </div>
         )}
 
-        {/* Locate Me button */}
-        <button
-          onClick={handleLocateMe}
-          disabled={locating}
-          title={locating ? 'Locating…' : 'Go to my location'}
-          className="absolute top-3 right-3 z-[1000] bg-white border border-gray-200 rounded-lg p-2 shadow-sm hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-        >
-          {locating
-            ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-            : <Crosshair className="w-5 h-5 text-indigo-600" />
-          }
-        </button>
-
-        {locateError && (
-          <div className="absolute top-14 right-3 z-[1000] bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 shadow-sm max-w-[200px]">
-            {locateError}
-          </div>
-        )}
-
         <LeafletMap
           incidents={filteredIncidents}
           onMapClick={handleMapClick}
@@ -138,7 +93,6 @@ export default function MapView({ initialIncidents, userId, userEmail, focusLoca
           onIncidentDelete={handleIncidentDeleted}
           userId={userId}
           focusLocation={focusLocation}
-          userLocation={userLocation}
         />
       </div>
 
