@@ -72,6 +72,7 @@ export interface LeafletMapProps {
   onIncidentDelete: (id: string) => void
   userId: string | null
   focusLocation?: { lat: number; lng: number } | null
+  userLocation?: { lat: number; lng: number } | null
 }
 
 export default function LeafletMap({
@@ -81,6 +82,7 @@ export default function LeafletMap({
   onIncidentDelete,
   userId,
   focusLocation,
+  userLocation,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   // useState (not useRef) so changing the map instance triggers a re-render,
@@ -88,6 +90,7 @@ export default function LeafletMap({
   const [map, setMap] = useState<L.Map | null>(null)
   const markersRef   = useRef<Map<string, L.Marker>>(new Map())
   const fittedRef    = useRef(false)
+  const userMarkerRef = useRef<L.Marker | null>(null)
 
   // Stable callback refs — prevent marker effect from re-running on every render
   const onMapClickRef       = useRef(onMapClick)
@@ -100,6 +103,19 @@ export default function LeafletMap({
   // ── Initialise map once ───────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return
+
+    // Inject pulse-animation CSS once
+    if (!document.getElementById('ulp-style')) {
+      const el = document.createElement('style')
+      el.id = 'ulp-style'
+      el.textContent = `
+        @keyframes ulp-ring {
+          0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.9; }
+          100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0;   }
+        }
+      `
+      document.head.appendChild(el)
+    }
 
     const leafletMap = L.map(containerRef.current, { center: [20, 0], zoom: 2 })
 
@@ -119,6 +135,7 @@ export default function LeafletMap({
       setMap(null)
       fittedRef.current = false
       markersRef.current.clear()
+      userMarkerRef.current = null
     }
   }, [])
 
@@ -219,6 +236,63 @@ export default function LeafletMap({
 
     return () => cancelAnimationFrame(raf)
   }, [map, incidents, userId, focusLocation])
+
+  // ── User location: pulsing marker + fly-to ───────────────────
+  useEffect(() => {
+    if (!map) return
+
+    if (!userLocation) {
+      // Remove the marker if location was cleared
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove()
+        userMarkerRef.current = null
+      }
+      return
+    }
+
+    const pulseIcon = L.divIcon({
+      html: `
+        <div style="position:relative;width:20px;height:20px">
+          <div style="
+            position:absolute;top:50%;left:50%;
+            width:40px;height:40px;border-radius:50%;
+            background:rgba(79,70,229,0.35);
+            animation:ulp-ring 2s ease-out infinite;
+          "></div>
+          <div style="
+            position:absolute;top:50%;left:50%;
+            width:40px;height:40px;border-radius:50%;
+            background:rgba(79,70,229,0.2);
+            animation:ulp-ring 2s ease-out 1s infinite;
+          "></div>
+          <div style="
+            position:absolute;top:50%;left:50%;
+            transform:translate(-50%,-50%);
+            width:16px;height:16px;border-radius:50%;
+            background:#4f46e5;border:3px solid white;
+            box-shadow:0 0 8px rgba(79,70,229,0.7);
+            z-index:2;
+          "></div>
+        </div>`,
+      className: '',
+      iconSize:   [20, 20],
+      iconAnchor: [10, 10],
+    })
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
+      userMarkerRef.current.setIcon(pulseIcon)
+    } else {
+      userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
+        icon: pulseIcon,
+        zIndexOffset: 1000,
+      }).addTo(map)
+    }
+
+    // Fly to the user location every time the button is clicked (even if same coords),
+    // so the user can always re-center the map by clicking "Locate Me".
+    map.flyTo([userLocation.lat, userLocation.lng], 17, { animate: true, duration: 1.5 })
+  }, [map, userLocation])
 
   // The container uses absolute inset-0 so it fills the relatively-positioned
   // parent regardless of whether the parent's height comes from flex or CSS.
